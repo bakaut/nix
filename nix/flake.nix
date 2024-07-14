@@ -27,8 +27,16 @@
           unpackPhase = ''
             runHook preUnpack
             mkdir -p $TMPDIR/tmp
-            tar tzf $src
-            tar xzf $src -C $TMPDIR/tmp
+            if [[ "$src" == *.tar.gz ]]; then
+              tar tzf $src
+              tar xzf $src -C $TMPDIR/tmp
+            elif [[ "$src" == *.zip ]]; then
+              unzip -l $src
+              unzip $src -d $TMPDIR/tmp
+            else
+              echo "Unsupported archive format"
+              exit 1
+            fi
             runHook postUnpack
           '';
 
