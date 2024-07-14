@@ -20,20 +20,48 @@
           wget
         ];
 
+        # Define package details
+        packageDetails = [
+          {
+            name = "flux";
+            url = "https://github.com/fluxcd/flux2/releases/download/v2.2.3/flux_2.2.3_darwin_arm64.tar.gz";
+            sha256 = "JSn7XruBDOZmYmI1bik5goKnp2bfTn6VypOkD7gC9FI=";
+          }
+          {
+            name = "terraform";
+            url = "https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_darwin_amd64.zip";
+            sha256 = "BRxwLhVqTRocYoeDzyyg4duMyntMDxaG6mI1WO1VYPk=";
+          }
+          {
+            name = "sops";
+            url = "https://github.com/mozilla/sops/releases/download/v3.7.1/sops-v3.7.1.darwin";
+            sha256 = "Q9L5xjkhpXv2ByaKBdSAzDCemXm7gSaSSN0Rfl76wTM=";
+          }
+          {
+            name = "helm";
+            url = "https://get.helm.sh/helm-v3.15.3-darwin-arm64.tar.gz";
+            sha256 = "ntU7Gc/ZNZCMUmm6PogChGL8TCSfhfk3rozAS2/pzq0=";
+          }
+          {
+            name = "kubectl";
+            url = "https://dl.k8s.io/release/v1.28.9/bin/darwin/arm64/kubectl";
+            sha256 = "SMsttMx2qaOg9df03ZvYORlrOdlyYkc4S5HjLmqDvpQ=";
+          }
+        ];
+
         # Helper function to create a package from a URL and SHA256
         mkPackage = { name, url, sha256 }: pkgs.stdenv.mkDerivation {
           inherit name;
-          src = if builtins.pathExists /nix/store/${sha256} then /nix/store/${sha256} else pkgs.fetchurl {
+          src = if builtins.pathExists "/nix/store/${sha256}" then "/nix/store/${sha256}" else pkgs.fetchurl {
             inherit url sha256;
           };
-          
+
           buildInputs = requiredTools;
 
           phases = [ "unpackPhase" "installPhase" ];
 
           unpackPhase = ''
             runHook preUnpack
-            rm -f /nix/bin/${name} || true
             mkdir -p $TMPDIR/tmp
             if [[ "$src" == *.tar.gz ]]; then
               tar tzf $src
@@ -53,9 +81,9 @@
           installPhase = ''
             runHook preInstall
             mkdir -p $out/bin
-            cp $(find . -type f -name "*${name}*") $out/bin/${name}
-            cp $out/bin/${name} /nix/bin/
-            chmod +x /nix/bin/${name}
+            cp $(find $TMPDIR/tmp -type f -name "*${name}*") $out/bin/${name}
+            chmod +x $out/bin/${name}
+            cp $out/bin/${name} /nix/bin/${name}
             runHook postInstall
           '';
 
@@ -67,41 +95,15 @@
           };
         };
 
-      in {
-        flux = mkPackage {
-          name = "flux";
-          url = "https://github.com/fluxcd/flux2/releases/download/v2.2.3/flux_2.2.3_darwin_arm64.tar.gz";
-          sha256 = "JSn7XruBDOZmYmI1bik5goKnp2bfTn6VypOkD7gC9FI=";
-        };
-        terraform = mkPackage {
-          name = "terraform";
-          url = "https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_darwin_amd64.zip";
-          sha256 = "BRxwLhVqTRocYoeDzyyg4duMyntMDxaG6mI1WO1VYPk=";
-        };
-        sops = mkPackage {
-          name = "sops";
-          url = "https://github.com/mozilla/sops/releases/download/v3.7.1/sops-v3.7.1.darwin";
-          sha256 = "Q9L5xjkhpXv2ByaKBdSAzDCemXm7gSaSSN0Rfl76wTM=";
-        };
-        helm = mkPackage {
-          name = "helm";
-          url = "https://get.helm.sh/helm-v3.15.3-darwin-arm64.tar.gz";
-          sha256 = "ntU7Gc/ZNZCMUmm6PogChGL8TCSfhfk3rozAS2/pzq0=";
-        };
-        kubectl = mkPackage {
-          name = "kubectl";
-          url = "https://dl.k8s.io/release/v1.28.9/bin/darwin/arm64/kubectl";
-          sha256 = "SMsttMx2qaOg9df03ZvYORlrOdlyYkc4S5HjLmqDvpQ=";
-        };
+        # Create all packages using mkPackage function
+        packages = map (pkg: mkPackage pkg) packageDetails;
+
+      in pkgs.buildEnv {
+        name = "home-packages";
+        paths = packages;
       };
     };
 
-    defaultPackages = {
-      "aarch64-darwin" = [
-        self.packages."aarch64-darwin".flux
-        self.packages."aarch64-darwin".terraform
-        self.packages."aarch64-darwin".sops
-      ];
-    };
+    defaultPackage."aarch64-darwin" = self.packages."aarch64-darwin";
   };
 }
