@@ -13,14 +13,21 @@
         pkgs = import nixpkgs { system = "aarch64-darwin"; };
         unstablePkgs = import unstable { system = "aarch64-darwin"; };
 
+        # Define a list of tools needed for building and running packages
+        requiredTools = with pkgs; [
+          libarchive
+          unzip
+          wget
+        ];
+
         # Helper function to create a package from a URL and SHA256
         mkPackage = { name, url, sha256 }: pkgs.stdenv.mkDerivation {
           inherit name;
           src = if builtins.pathExists /nix/store/${sha256} then /nix/store/${sha256} else pkgs.fetchurl {
             inherit url sha256;
           };
-
-          buildInputs = [ pkgs.libarchive pkgs.unzip ];
+          
+          buildInputs = requiredTools;
 
           phases = [ "unpackPhase" "installPhase" ];
 
