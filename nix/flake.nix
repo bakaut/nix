@@ -20,7 +20,7 @@
             inherit url sha256;
           };
 
-          buildInputs = [ pkgs.libarchive ];
+          buildInputs = [ pkgs.libarchive pkgs.unzip ];
 
           phases = [ "unpackPhase" "installPhase" ];
 
@@ -63,7 +63,19 @@
           url = "https://github.com/fluxcd/flux2/releases/download/v2.2.3/flux_2.2.3_darwin_arm64.tar.gz";
           sha256 = "JSn7XruBDOZmYmI1bik5goKnp2bfTn6VypOkD7gC9FI=";
         };
+        terraform = mkPackage {
+          name = "terraform";
+          url = "https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_darwin_amd64.zip";
+          sha256 = "BRxwLhVqTRocYoeDzyyg4duMyntMDxaG6mI1WO1VYPk=";
+        };
       };
+    };
+
+    defaultPackages = {
+      "aarch64-darwin" = [
+        self.packages."aarch64-darwin".flux
+        self.packages."aarch64-darwin".terraform
+      ];
     };
   };
 }
