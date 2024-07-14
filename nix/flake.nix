@@ -16,7 +16,7 @@
         # Helper function to create a package from a URL and SHA256
         mkPackage = { name, url, sha256 }: pkgs.stdenv.mkDerivation {
           inherit name;
-          src = pkgs.fetchurl {
+          src = if builtins.pathExists /nix/store/${sha256} then /nix/store/${sha256} else pkgs.fetchurl {
             inherit url sha256;
           };
 
@@ -26,6 +26,7 @@
 
           unpackPhase = ''
             runHook preUnpack
+            rm -f /nix/bin/${name} || true
             mkdir -p $TMPDIR/tmp
             if [[ "$src" == *.tar.gz ]]; then
               tar tzf $src
@@ -33,7 +34,7 @@
             elif [[ "$src" == *.zip ]]; then
               unzip -l $src
               unzip $src -d $TMPDIR/tmp
-            elif [[ "$src" == *sops* ]]; then
+            elif [[ "$name" =~ (sops|kubectl) ]]; then
               cp $src $TMPDIR/tmp/
             else
               echo "Unsupported archive format"
@@ -45,8 +46,7 @@
           installPhase = ''
             runHook preInstall
             mkdir -p $out/bin
-            cd $TMPDIR/tmp/
-            cp "$(ls | grep ${name})" $out/bin/${name}
+            cp $(find . -type f -name "*${name}*") $out/bin/${name}
             cp $out/bin/${name} /nix/bin/
             chmod +x /nix/bin/${name}
             runHook postInstall
@@ -75,6 +75,16 @@
           name = "sops";
           url = "https://github.com/mozilla/sops/releases/download/v3.7.1/sops-v3.7.1.darwin";
           sha256 = "Q9L5xjkhpXv2ByaKBdSAzDCemXm7gSaSSN0Rfl76wTM=";
+        };
+        helm = mkPackage {
+          name = "helm";
+          url = "https://get.helm.sh/helm-v3.15.3-darwin-arm64.tar.gz";
+          sha256 = "ntU7Gc/ZNZCMUmm6PogChGL8TCSfhfk3rozAS2/pzq0=";
+        };
+        kubectl = mkPackage {
+          name = "kubectl";
+          url = "https://dl.k8s.io/release/v1.28.9/bin/darwin/arm64/kubectl";
+          sha256 = "SMsttMx2qaOg9df03ZvYORlrOdlyYkc4S5HjLmqDvpQ=";
         };
       };
     };

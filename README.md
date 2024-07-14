@@ -16,3 +16,8 @@ echo export PATH=$PATH:/nix/bin >> ~/.zshrc
 Tested on MacOs _version_
 
 List of software intalled:
+- helm 3.10.3
+- flux 2.2.3
+- terraform 1.8.5
+- sops 3.7.3
+- kubectl 1.28.9
