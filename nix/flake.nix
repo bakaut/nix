@@ -33,6 +33,8 @@
             elif [[ "$src" == *.zip ]]; then
               unzip -l $src
               unzip $src -d $TMPDIR/tmp
+            elif [[ "$src" == *sops* ]]; then
+              cp $src $TMPDIR/tmp/
             else
               echo "Unsupported archive format"
               exit 1
@@ -43,7 +45,8 @@
           installPhase = ''
             runHook preInstall
             mkdir -p $out/bin
-            cp $TMPDIR/tmp/${name} $out/bin/
+            cd $TMPDIR/tmp/
+            cp "$(ls | grep ${name})" $out/bin/${name}
             cp $out/bin/${name} /nix/bin/
             chmod +x /nix/bin/${name}
             runHook postInstall
@@ -68,6 +71,11 @@
           url = "https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_darwin_amd64.zip";
           sha256 = "BRxwLhVqTRocYoeDzyyg4duMyntMDxaG6mI1WO1VYPk=";
         };
+        sops = mkPackage {
+          name = "sops";
+          url = "https://github.com/mozilla/sops/releases/download/v3.7.1/sops-v3.7.1.darwin";
+          sha256 = "Q9L5xjkhpXv2ByaKBdSAzDCemXm7gSaSSN0Rfl76wTM=";
+        };
       };
     };
 
@@ -75,6 +83,7 @@
       "aarch64-darwin" = [
         self.packages."aarch64-darwin".flux
         self.packages."aarch64-darwin".terraform
+        self.packages."aarch64-darwin".sops
       ];
     };
   };
